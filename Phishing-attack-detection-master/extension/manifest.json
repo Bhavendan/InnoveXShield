@@ -1,0 +1,65 @@
+{
+  "name": "InnoveXShield",
+  "version": "0.1.0",
+  "description": "InnoveXShield - Advanced AI & ML Phishing Threat Detection for Emails and URLs",
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://www.mail.google.com/*"
+      ],
+      "js": [
+        "contentScript.js"
+      ],
+      "css": [
+        "contentScript.css"
+      ]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/img.png",
+        "assets/icon16.png",
+        "assets/icon32.png",
+        "assets/icon48.png",
+        "assets/icon128.png",
+        "assets/bookmark.png",
+        "assets/play.png",
+        "assets/delete.png",
+        "assets/save.png"
+      ],
+      "matches": [
+        "https://mail.google.com/*",
+        "https://www.mail.google.com/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png",
+      "48": "assets/icon48.png",
+      "128": "assets/icon128.png"
+    },
+    "default_title": "InnoveXShield",
+    "default_popup": "popup.html"
+  },
+  "manifest_version": 3
+}

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link href="popup.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <!-- Header -->
+    <div class="header">
+      <div class="header-brand">
+        <img src="assets/icon32.png" class="header-logo" alt="InnoveXShield" />
+        <div>
+          <div class="header-title">InnoveXShield</div>
+          <div class="header-subtitle">Email Security & URL Investigator</div>
+        </div>
+      </div>
+      <div class="server-badge" id="serverStatus">Connecting...</div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" id="tabEmailBtn">📧 Email Analysis</button>
+      <button class="tab-btn" id="tabManualBtn">🔍 Manual Scan</button>
+    </div>
+
+    <!-- TAB 1: Current Email Investigation -->
+    <div id="emailView" class="tab-content active">
+      <!-- Loading State -->
+      <div id="loadingState" class="state-card loading-box">
+        <div class="spinner"></div>
+        <div class="loading-text">Extracting & Investigating Email...</div>
+      </div>
+
+      <!-- Result View -->
+      <div id="emailResultView" style="display: none;">
+        <!-- Verdict Banner -->
+        <div id="verdictBanner" class="verdict-banner">
+          <div class="verdict-main">
+            <span id="verdictIcon" class="verdict-icon">🛡️</span>
+            <div>
+              <div id="verdictText" class="verdict-text">LEGITIMATE</div>
+              <div id="verdictMeta" class="verdict-meta">Confidence: 95% • Risk Level: LOW</div>
+            </div>
+          </div>
+          <div id="riskScorePill" class="risk-pill">0/100</div>
+        </div>
+
+        <!-- ML Model & Scan Summary Stats -->
+        <div class="section-card" id="mlStatsCard">
+          <div class="card-header">
+            <span class="card-title">🤖 Gradient Boosting Model Analysis</span>
+            <span id="mlVerdictBadge" class="mini-badge safe">ML: LEGITIMATE</span>
+          </div>
+          <div class="card-body">
+            <div class="meta-row">
+              <span class="meta-label">Actionable URLs:</span>
+              <span id="actionableUrlsCount" class="meta-val">0</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Resource URLs Ignored:</span>
+              <span id="resourceUrlsCount" class="meta-val">0</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Suspicious Actionable URLs:</span>
+              <span id="suspiciousUrlsCount" class="meta-val">0</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">ML Phishing Probability:</span>
+              <span id="mlProbText" class="meta-val">0%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sender Card -->
+        <div class="section-card" id="senderCard">
+          <div class="card-header">
+            <span class="card-title">👤 Sender Analysis</span>
+            <span id="senderStatusBadge" class="mini-badge safe">Verified Domain</span>
+          </div>
+          <div class="card-body">
+            <div class="meta-row">
+              <span class="meta-label">From:</span>
+              <span id="senderEmailText" class="meta-val">--</span>
+            </div>
+            <div class="meta-row">
+              <span class="meta-label">Subject:</span>
+              <span id="subjectText" class="meta-val">--</span>
+            </div>
+            <div id="senderAlerts" class="alert-box" style="display: none;"></div>
+          </div>
+        </div>
+
+        <!-- Detected Links Section -->
+        <div class="section-card">
+          <div class="card-header">
+            <span class="card-title">🔗 Detected Links (<span id="linkCountBadge">0</span>)</span>
+          </div>
+          <div class="card-body">
+            <div id="linksContainer" class="links-list">
+              <!-- Rendered dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Why? Threat Indicators Card -->
+        <div class="section-card" id="indicatorsCard" style="display: none;">
+          <div class="card-header">
+            <span class="card-title">⚠️ Why? Threat Indicators</span>
+          </div>
+          <div class="card-body">
+            <ul id="indicatorsList" class="reasons-list"></ul>
+          </div>
+        </div>
+
+        <!-- Recommendation Card -->
+        <div class="section-card" id="recommendationCard">
+          <div class="card-header">
+            <span class="card-title">💡 Security Recommendation</span>
+          </div>
+          <div class="card-body">
+            <p id="recommendationText" class="explanation-paragraph" style="font-weight: 600;"></p>
+            <p id="explanationText" class="explanation-paragraph" style="color: #64748b; font-size: 11px; margin-top: 4px;">--</p>
+          </div>
+        </div>
+
+        <div class="action-btn-row">
+          <button id="downloadReportBtn" class="btn-secondary">📥 Download Report</button>
+          <button id="rescanBtn" class="btn-primary">🔄 Re-scan Email</button>
+        </div>
+      </div>
+
+      <!-- Empty / Not in Mail State -->
+      <div id="notMailState" class="state-card" style="display: none;">
+        <div class="state-icon">📭</div>
+        <div class="state-title">No Email Detected</div>
+        <div class="state-desc">Open an email in Gmail or use the Manual Scan tab to analyze text or URLs.</div>
+      </div>
+    </div>
+
+    <!-- TAB 2: Manual Scanner -->
+    <div id="manualView" class="tab-content">
+      <!-- Manual URL -->
+      <div class="section-card">
+        <div class="card-title">Scan URL</div>
+        <div class="input-row">
+          <input type="text" id="manualUrlInput" placeholder="https://example.com/login" />
+          <button id="manualUrlBtn" class="btn-primary">Scan</button>
+        </div>
+        <div id="manualUrlResult" class="manual-output" style="display: none;"></div>
+      </div>
+
+      <!-- Manual Email Text -->
+      <div class="section-card">
+        <div class="card-title">Investigate Email Text / HTML</div>
+        <div class="form-group">
+          <input type="text" id="manualSenderInput" placeholder="Sender (e.g. security@paypal.com)" />
+        </div>
+        <div class="form-group">
+          <input type="text" id="manualSubjectInput" placeholder="Subject (e.g. Urgent Account Suspension)" />
+        </div>
+        <div class="form-group">
+          <textarea id="manualBodyInput" rows="4" placeholder="Paste email body or HTML here..."></textarea>
+        </div>
+        <button id="manualEmailBtn" class="btn-primary full-width">🔍 Investigate Email</button>
+        <div id="manualEmailResult" class="manual-output" style="display: none;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InnoveXShield - Email & URL Phishing Investigation Platform</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="static/styles.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="/">
+            <img src="/static/logo.png" alt="InnoveXShield Logo" width="30" height="30" class="rounded" /> InnoveXShield Investigation Platform
+        </a>
+        <span class="badge bg-success">ML Engine Active (Port 5001)</span>
+    </div>
+</nav>
+
+<div class="container my-4">
+    <!-- Header Summary -->
+    <div class="text-center mb-4">
+        <h2 class="fw-bold text-dark">Phishing Email & Threat Link Detection</h2>
+        <p class="text-muted">Extract hyperlinks, evaluate domain reputations, detect brand spoofing, and classify email legitimacy.</p>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-pills nav-fill mb-4 bg-white p-2 rounded shadow-sm border" id="pills-tab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold {% if active_tab != 'url' %}active{% endif %}" id="pills-email-tab" data-bs-toggle="pill" data-bs-target="#pills-email" type="button" role="tab">
+                📧 Full Email Investigation
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold {% if active_tab == 'url' %}active{% endif %}" id="pills-url-tab" data-bs-toggle="pill" data-bs-target="#pills-url" type="button" role="tab">
+                🔗 Single URL Scanner
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content" id="pills-tabContent">
+        <!-- TAB 1: Email Investigation -->
+        <div class="tab-pane fade {% if active_tab != 'url' %}show active{% endif %}" id="pills-email" role="tabpanel">
+            <div class="row g-4">
+                <!-- Form Column -->
+                <div class="col-lg-5">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-primary text-white fw-bold">
+                            📥 Submit Email for Deep Analysis
+                        </div>
+                        <div class="card-body">
+                            <form action="/" method="post">
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Sender (From)</label>
+                                    <input type="text" class="form-control" name="email_sender" placeholder='"PayPal Support" <security@paypa1.com>' />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Subject</label>
+                                    <input type="text" class="form-control" name="email_subject" placeholder="URGENT: Your account has been suspended" />
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Email Body (Text or HTML)</label>
+                                    <textarea class="form-control" name="email_body" rows="8" placeholder="Paste full email body or HTML code here..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">
+                                    🔍 Run Full Phishing Investigation
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Column -->
+                <div class="col-lg-7">
+                    {% if investigation %}
+                    <div class="card shadow-sm border-0">
+                        <!-- Verdict Header -->
+                        <div class="card-header p-3 text-white {% if investigation.emailVerdict == 'PHISHING' %}bg-danger{% elif investigation.emailVerdict == 'SUSPICIOUS' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h4 class="mb-0 fw-bold">
+                                        {% if investigation.emailVerdict == 'PHISHING' %}🚨 PHISHING DETECTED{% elif investigation.emailVerdict == 'SUSPICIOUS' %}⚠️ SUSPICIOUS EMAIL{% else %}🛡️ LEGITIMATE EMAIL{% endif %}
+                                    </h4>
+                                    <small>Confidence: {{ investigation.confidence }}% • Risk Level: {{ investigation.riskLevel }}</small>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-light text-dark fs-6">Risk: {{ investigation.overallRiskScore }}/100</span>
+                                    <button onclick="downloadEmailInvestigationReport()" class="btn btn-sm btn-light fw-bold shadow-sm">📥 Download Report</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <!-- Sender Analysis -->
+                            <div class="mb-3 p-3 bg-light rounded border">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <h6 class="fw-bold mb-0">👤 Sender Analysis</h6>
+                                    {% if investigation.senderAnalysis.suspicious %}
+                                    <span class="badge bg-danger">Spoofed / Suspicious</span>
+                                    {% else %}
+                                    <span class="badge bg-success">Normal Domain</span>
+                                    {% endif %}
+                                </div>
+                                <div class="small text-muted"><strong>Address:</strong> {{ investigation.senderAnalysis.email or 'N/A' }}</div>
+                                <div class="small text-muted"><strong>Domain:</strong> {{ investigation.senderAnalysis.domain or 'N/A' }}</div>
+                                {% if investigation.senderAnalysis.reasons %}
+                                <div class="text-danger small mt-2">
+                                    {% for r in investigation.senderAnalysis.reasons %}
+                                    <div>• {{ r }}</div>
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Threat Indicators -->
+                            {% if investigation.indicators %}
+                            <div class="mb-3 p-3 bg-light rounded border">
+                                <h6 class="fw-bold mb-2 text-danger">⚠️ Detected Threat Indicators</h6>
+                                <ul class="mb-0 ps-3 small text-danger">
+                                    {% for ind in investigation.indicators %}
+                                    <li>{{ ind }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
+                            <!-- Detected Links -->
+                            <div class="mb-3 p-3 bg-white rounded border">
+                                <h6 class="fw-bold mb-2">🔗 Detected Links ({{ investigation.detectedLinks|length }})</h6>
+                                {% if investigation.detectedLinks and investigation.detectedLinks|length > 0 %}
+                                <div class="list-group">
+                                    {% for link in investigation.detectedLinks %}
+                                    <div class="list-group-item list-group-item-action flex-column align-items-start mb-2 border rounded {% if link.verdict == 'MALICIOUS' %}border-danger bg-danger-subtle{% elif link.verdict == 'SUSPICIOUS' %}border-warning bg-warning-subtle{% else %}border-success bg-success-subtle{% endif %}">
+                                        <div class="d-flex w-100 justify-content-between align-items-center">
+                                            <h6 class="mb-1 fw-bold text-dark">{{ link.anchorText }}</h6>
+                                            <span class="badge {% if link.verdict == 'MALICIOUS' %}bg-danger{% elif link.verdict == 'SUSPICIOUS' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                                {{ link.verdict }} ({{ link.riskScore }}/100)
+                                            </span>
+                                        </div>
+                                        <div class="text-break font-monospace small text-secondary my-1">{{ link.originalUrl }}</div>
+                                        <div class="small text-muted">
+                                            <span><strong>Domain:</strong> {{ link.domain }}</span> | 
+                                            <span><strong>Protocol:</strong> {{ link.protocol }}</span>
+                                        </div>
+                                        {% if link.reasons %}
+                                        <ul class="mb-0 mt-1 ps-3 small text-danger">
+                                            {% for r in link.reasons %}
+                                            <li>{{ r }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% endif %}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="text-muted text-center py-2">No links detected in this email.</div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Executive Summary / Reasons -->
+                            <div class="p-3 bg-light rounded border">
+                                <h6 class="fw-bold mb-1">📋 Investigation Summary</h6>
+                                <p class="small text-muted mb-2">{{ investigation.explanation }}</p>
+                                {% if investigation.reasons %}
+                                <ul class="mb-0 ps-3 small text-secondary">
+                                    {% for r in investigation.reasons %}
+                                    <li>{{ r }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="card shadow-sm border-0 h-100 d-flex justify-content-center align-items-center text-center p-5 text-muted">
+                        <div class="fs-1 mb-2">🛡️</div>
+                        <h5>Ready to Investigate</h5>
+                        <p class="small">Enter an email sender, subject, and content to extract links and analyze phishing risks.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Single URL Scanner -->
+        <div class="tab-pane fade {% if active_tab == 'url' %}show active{% endif %}" id="pills-url" role="tabpanel">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-dark text-white fw-bold">
+                            🔗 Single URL Security Scanner
+                        </div>
+                        <div class="card-body p-4">
+                            <form action="/" method="post">
+                                <div class="input-group mb-3">
+                                    <input type="text" class="form-control form-control-lg" name="url" placeholder="https://example.com/login" value="{{ url or '' }}" required />
+                                    <button class="btn btn-primary fw-bold px-4" type="submit">Scan URL</button>
+                                </div>
+                            </form>
+
+                            {% if url_analysis %}
+                            <div class="mt-4 p-4 rounded border {% if url_analysis.verdict == 'MALICIOUS' %}bg-danger-subtle border-danger{% elif url_analysis.verdict == 'SUSPICIOUS' %}bg-warning-subtle border-warning{% else %}bg-success-subtle border-success{% endif %}">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h4 class="fw-bold mb-0">Verdict: {{ url_analysis.verdict }}</h4>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge {% if url_analysis.verdict == 'MALICIOUS' %}bg-danger{% elif url_analysis.verdict == 'SUSPICIOUS' %}bg-warning text-dark{% else %}bg-success{% endif %} fs-6">
+                                            Risk: {{ url_analysis.riskScore }}/100
+                                        </span>
+                                        <button onclick="downloadSingleUrlReport()" class="btn btn-sm btn-outline-dark fw-bold">📥 Download Report</button>
+                                    </div>
+                                </div>
+                                <div class="font-monospace text-break mb-2"><strong>URL:</strong> {{ url_analysis.originalUrl }}</div>
+                                <div class="mb-2"><strong>Domain:</strong> <code>{{ url_analysis.domain }}</code> | <strong>Protocol:</strong> {{ url_analysis.protocol }}</div>
+                                {% if url_analysis.reasons %}
+                                <div class="mt-3">
+                                    <strong>Detected Factors:</strong>
+                                    <ul class="mb-0 ps-3 mt-1 text-danger">
+                                        {% for r in url_analysis.reasons %}
+                                        <li>{{ r }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report Generator Script -->
+<script>
+{% if investigation %}
+const currentInvestigationData = {{ investigation|tojson }};
+const currentSender = "{{ sender or '' }}";
+const currentSubject = "{{ subject or '' }}";
+{% else %}
+const currentInvestigationData = null;
+const currentSender = "";
+const currentSubject = "";
+{% endif %}
+
+{% if url_analysis %}
+const currentUrlData = {{ url_analysis|tojson }};
+{% else %}
+const currentUrlData = null;
+{% endif %}
+
+function downloadEmailInvestigationReport() {
+    if (!currentInvestigationData) return;
+    const reportHtml = generateStandaloneHtmlReport(currentInvestigationData, {
+        sender: currentSender,
+        subject: currentSubject
+    });
+    triggerDownload(reportHtml, `InnoveXShield_Report_${new Date().toISOString().slice(0,10)}.html`);
+}
+
+function downloadSingleUrlReport() {
+    if (!currentUrlData) return;
+    const reportPayload = {
+        classification: currentUrlData.verdict === 'MALICIOUS' ? 'PHISHING' : (currentUrlData.verdict === 'SUSPICIOUS' ? 'SUSPICIOUS' : 'LEGITIMATE'),
+        risk_score: currentUrlData.riskScore,
+        confidence: currentUrlData.confidence || 95,
+        explanation: (currentUrlData.reasons || []).join('. '),
+        detectedLinks: [{
+            originalUrl: currentUrlData.originalUrl,
+            domain: currentUrlData.domain,
+            protocol: currentUrlData.protocol,
+            https: currentUrlData.https,
+            urlType: 'ACTIONABLE',
+            verdict: currentUrlData.verdict,
+            riskScore: currentUrlData.riskScore,
+            reasons: currentUrlData.reasons
+        }],
+        indicators: currentUrlData.indicators || []
+    };
+    const reportHtml = generateStandaloneHtmlReport(reportPayload, {
+        sender: 'Manual URL Scan',
+        subject: `URL Scan: ${currentUrlData.domain}`
+    });
+    triggerDownload(reportHtml, `InnoveXShield_URL_Report_${new Date().toISOString().slice(0,10)}.html`);
+}
+
+function triggerDownload(htmlContent, filename) {
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+function generateStandaloneHtmlReport(data, meta) {
+    const classification = (data.classification || data.emailVerdict || 'LEGITIMATE').toUpperCase();
+    const riskScore = data.risk_score !== undefined ? data.risk_score : (data.overallRiskScore || 0);
+    const confidence = data.confidence || 90;
+    const verdictColor = classification === 'PHISHING' ? '#ef4444' : (classification === 'SUSPICIOUS' ? '#f59e0b' : '#10b981');
+    const verdictBg = classification === 'PHISHING' ? '#fef2f2' : (classification === 'SUSPICIOUS' ? '#fffbeb' : '#ecfdf5');
+    const verdictIcon = classification === 'PHISHING' ? '🔴' : (classification === 'SUSPICIOUS' ? '🟡' : '🟢');
+
+    const linksRows = (data.detectedLinks || []).map((l, i) => `
+        <tr>
+            <td>#${i+1}</td>
+            <td><strong>${l.originalUrl}</strong><br><small style="color:#64748b;">Anchor: ${l.anchorText || l.originalUrl}</small></td>
+            <td><code>${l.domain}</code> (${l.protocol || (l.https ? 'HTTPS':'HTTP')})</td>
+            <td><span style="background:${l.verdict === 'MALICIOUS' ? '#ef4444' : (l.verdict === 'SUSPICIOUS' ? '#f59e0b' : '#10b981')}; color:#fff; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:bold;">${l.verdict}</span></td>
+            <td><strong>${l.riskScore}/100</strong></td>
+            <td><small>${(l.reasons || []).join(', ') || 'Normal domain'}</small></td>
+        </tr>
+    `).join('');
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>InnoveXShield Forensic Report</title>
+    <style>
+        * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+        body { background:#f8fafc; color:#0f172a; padding:24px; font-size:13px; }
+        .wrapper { max-width:900px; margin:0 auto; background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; }
+        .header { background:#0f172a; color:#fff; padding:20px; display:flex; justify-content:space-between; align-items:center; }
+        .content { padding:24px; }
+        .verdict { background:${verdictBg}; border:2px solid ${verdictColor}; padding:16px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+        table { width:100%; border-collapse:collapse; margin-top:12px; }
+        th, td { text-align:left; padding:8px; border-bottom:1px solid #e2e8f0; }
+        th { background:#f8fafc; font-size:11px; text-transform:uppercase; }
+        .card { border:1px solid #e2e8f0; border-radius:8px; padding:16px; margin-bottom:16px; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <div>
+                <h2 style="margin:0; font-weight:800;">🛡️ INNOVEXSHIELD FORENSIC REPORT</h2>
+                <small style="color:#94a3b8;">Email & URL Phishing Threat Intelligence</small>
+            </div>
+            <button onclick="window.print()" style="background:#3b82f6; color:#fff; border:none; padding:8px 12px; border-radius:6px; font-weight:bold; cursor:pointer;">🖨️ Print Report</button>
+        </div>
+        <div class="content">
+            <div class="card" style="background:#f1f5f9;">
+                <div><strong>Subject:</strong> ${meta.subject || '(None)'}</div>
+                <div><strong>Sender:</strong> ${meta.sender || '(None)'}</div>
+                <div><strong>Generated:</strong> ${new Date().toLocaleString()}</div>
+            </div>
+            <div class="verdict">
+                <h3 style="margin:0; color:${verdictColor};">${verdictIcon} ${classification}</h3>
+                <span style="background:${verdictColor}; color:#fff; padding:4px 12px; border-radius:12px; font-weight:bold;">Risk: ${riskScore}/100 (Confidence: ${confidence}%)</span>
+            </div>
+            <div class="card">
+                <h4 style="margin-top:0;">📋 Summary</h4>
+                <p>${data.explanation || ''}</p>
+            </div>
+            <div class="card">
+                <h4 style="margin-top:0;">🔗 Investigated Links (${(data.detectedLinks || []).length})</h4>
+                <table>
+                    <thead><tr><th>#</th><th>URL</th><th>Domain</th><th>Verdict</th><th>Risk</th><th>Reasons</th></tr></thead>
+                    <tbody>${linksRows || '<tr><td colspan="6" style="text-align:center;">No links detected</td></tr>'}</tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+}
+</script>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

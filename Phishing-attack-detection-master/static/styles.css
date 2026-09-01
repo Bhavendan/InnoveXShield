@@ -1,0 +1,65 @@
+body {
+    background-color: #f8fafc;
+    color: #1e293b;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+.navbar {
+    background: #0f172a !important;
+}
+
+.card {
+    border-radius: 12px;
+    overflow: hidden;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-header {
+    font-size: 1.05rem;
+}
+
+.nav-pills .nav-link {
+    color: #475569;
+    border-radius: 8px;
+    padding: 10px 16px;
+    transition: all 0.2s ease;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #0d6efd;
+    color: #ffffff;
+    box-shadow: 0 2px 4px rgba(13, 110, 253, 0.25);
+}
+
+.bg-danger-subtle {
+    background-color: #fef2f2 !important;
+}
+
+.bg-warning-subtle {
+    background-color: #fffbeb !important;
+}
+
+.bg-success-subtle {
+    background-color: #f0fdf4 !important;
+}
+
+.border-danger {
+    border-color: #fca5a5 !important;
+}
+
+.border-warning {
+    border-color: #fde68a !important;
+}
+
+.border-success {
+    border-color: #bbf7d0 !important;
+}
+
+textarea.form-control {
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.font-monospace {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+}
